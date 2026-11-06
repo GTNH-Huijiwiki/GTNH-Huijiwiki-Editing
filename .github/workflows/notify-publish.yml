@@ -1,0 +1,20 @@
+name: 通知发布技能
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'skills/**'
+  workflow_dispatch:   # 允许在网页上手动触发
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 通知 GTNH-Huijiwiki-Actions 发布
+        env:
+          GH_TOKEN: ${{ secrets.ACTIONS_DISPATCH_TOKEN }}
+        run: |
+          gh api repos/GTNH-Huijiwiki/GTNH-Huijiwiki-Actions/dispatches \
+            -f event_type=publish-skill \
+            -f "client_payload[sha]=${{ github.sha }}"
