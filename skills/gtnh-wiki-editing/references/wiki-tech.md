@@ -71,7 +71,16 @@
 | `gtnhdimension` | 维度属性：缩写、ID、星系环境参数等 |
 | `Aspects`、`Tc4research` | 神秘时代要素与研究 |
 
-物品图标保存在 `File:` 命名空间，文件名形如 `icon_<模组>_<物品>.png`；很多中文图片名是指向这些文件的重定向。
+物品图标保存在 `File:` 命名空间，文件名形如 `icon_<模组>_<物品>.png`；很多中文图片名是指向这些文件的重定向。写模板或计算器时优先用物品记录里的 `iconName` 精确取图，给编辑者看的示例可以用更易读的中文图片名。
+
+### 字段速查
+
+Project:Database 的字段说明有时落后于实际数据。写模块前，先用一条查询看实际记录有哪些字段。举例（截至 2026-11-07 的 `default` 数据库）：
+
+- **物品记录**：`key`、`rawKey`、`translatedName`、`originalName`、`tooltips`、`tooltipStats`、`mod`、`iconName`、`frameCount`、`size`、`aspect` 等。图标字段现在是 `iconName`，旧文档里写的 `icon` 已不再使用。
+- **配方记录**：`inputItems`、`outputItems`、`inputFluids`、`outputFluids`、`eut`（EU/t）、`duration`（tick）、`nbtSensitive`、`sourceMod`、`index`。物品槽位可能是字符串、带 `key`／`amount`／`chance` 的对象，或候选物品数组。
+- **专有字段**：部分处理器的配方带有 `metadata` 等专有字段，例如光束加工、大型强子对撞机。写这类机器的计算器前，先查看对应配方页的 `metadata` 和物品 Tooltip，不要只凭显示名称推断规则。
+- **字段名拼写**：个别字段名沿用了数据里的拼写，例如 `Ores` 表的 `tranlatedName`，使用时照原样写。
 
 ## 查询模块
 
