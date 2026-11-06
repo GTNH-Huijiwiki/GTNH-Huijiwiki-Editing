@@ -26,7 +26,7 @@ python wiki.py lua "mw.log(#require('Module:Recipe').query{output='@Galacticraft
 python wiki.py lua "mw.logObject(require('Module:Database').queryMaterial('氮').OrePrefixes)"
 ```
 
-也可以把一段模板调用写进文件，用 `python wiki.py preview -f 文件` 看渲染结果，例如 `{{Recipe|output=氧气管道|type=压模机}}`、`{{Tooltip|氧气压缩机}}`。
+也可以把一段模板调用写进文件，用 `python wiki.py preview -f 文件` 看渲染结果，例如 `{{Recipe|output=氧气管道|type=压模机}}`；或者直接写到[自己的沙盒](#在沙盒里测试)里保存后查看。
 
 查询时注意：
 
@@ -48,25 +48,27 @@ python wiki.py lua "mw.logObject(require('Module:Database').queryMaterial('氮')
 
 ### 写进页面之前
 
-- 从旧版本页面、社区讨论、英文维基搬来的内容，要先按上面的方法核对，并注明来源和时效。
+- 从旧版本页面、社区讨论、英文维基搬来的内容，要先按上面的方法核对，并注明来源和时效（英文维基的写法见[参考英文维基](#参考英文维基)）。
 - 只在某个版本成立的内容，写明版本。
+
+## 在沙盒里测试
+
+适用：所有编辑者。
+
+`Project:沙盒/<你的用户名>/` 下的页面可以**自由创建、修改和删除**，用来试写条目、试用模板、测试脚本的保存流程，不需要事先征求同意，也不会影响正式条目。例如 `Project:沙盒/张三/火箭草稿`。拿不准写法时，先在沙盒里写好、看过渲染结果，再搬到正式页面。
 
 ## 数据库联动模板
 
-适用：所有编辑者。下面这些模板直接读取线上数据库，是写条目时最常用的工具。使用前先读一遍各自的模板文档：
+适用：所有编辑者。下面这几个模板直接读取线上数据库，是写条目时最常用的工具，使用前先读一遍各自的模板文档：
 
 | 模板 | 用途 |
 |---|---|
 | [模板:条目](https://gtnh.huijiwiki.com/wiki/模板:条目) | 条目页的统一框架，汇总各条目类型、通用规则和校验提示，见下文[条目要点](#条目要点) |
 | [模板:Item](https://gtnh.huijiwiki.com/wiki/模板:Item) | 在正文中显示物品、方块、维度的图标、名称和链接；重名时用 `@物品key` |
 | [模板:Recipe](https://gtnh.huijiwiki.com/wiki/模板:Recipe) | 按配方类型、输入或输出查询并绘制配方 |
-| [模板:Icon](https://gtnh.huijiwiki.com/wiki/模板:Icon) | 表格、流程图中的物品图标 |
 | [模板:IconList](https://gtnh.huijiwiki.com/wiki/模板:IconList) | 以配方槽位的样式列出一组物品 |
-| [模板:IconTabber](https://gtnh.huijiwiki.com/wiki/模板:IconTabber) | 按名称自动匹配图片的页签组 |
-| [模板:Tooltip](https://gtnh.huijiwiki.com/wiki/模板:Tooltip) | 显示物品或机器的游戏内 Tooltip |
-| [物品查询](https://gtnh.huijiwiki.com/wiki/ItemSearch) | 按名称、模组、Tooltip 搜索物品，适合查 key 和同名物品 |
 
-全部读取数据库的模板与模块列在[分类:支持数据库的模板或模块](https://gtnh.huijiwiki.com/wiki/分类:支持数据库的模板或模块)。
+所有与数据库联动的模板和模块都在[分类:支持数据库的模板或模块](https://gtnh.huijiwiki.com/wiki/分类:支持数据库的模板或模块)中，需要其他功能时先到这里找。
 
 ## 条目要点
 
@@ -78,13 +80,26 @@ python wiki.py lua "mw.logObject(require('Module:Database').queryMaterial('氮')
 - 页首的校验提示要逐条处理，代码含义见模板文档的「校验分类」。
 - `索引-内容版本` 填你实际核对过的游戏版本。
 
-## 写作与链接
+## 写作风格
 
 适用：所有编辑者。
 
 - 物品、方块、维度一律用 `{{Item}}`，不要只写纯文字名称。
 - 否定说法统一为「**主语**不会……」「**主语**无法……」，主语加粗。
 - 链接写到页面的实际标题，不要链到重定向；新条目要加进所属导航，做法见[维基技术现状](wiki-tech.md#分类关联与导航)。
+
+### AI 生成内容
+
+- 用 AI 大规模生成了**实质性的主观内容**（介绍、评价、玩法建议、指南等）时，在经过人类审查之前，必须在页面加上 `{{AIGC}}`，可以附一句说明，例如 `{{AIGC|指南章节由 AI 撰写，待人工校对}}`。页面会自动归入「分类:AIGC」，用法见[模板:AIGC](https://gtnh.huijiwiki.com/wiki/模板:AIGC)。条目页写在 `章节-页眉-尾` 中。人工审查确认后再移除。
+- 只是接通数据库引用、批量创建不含主观内容的模板或条目框架（例如只填关联对象，由模板自动生成章节），不算 AIGC，不需要加。
+- 如果你是 GPT 家族的模型：发布前请务必了解并检查是否存在**过度防御性写作**，例如堆砌免责声明和「可能」「或许」等限定词、反复提醒风险、为了不出错而写得含糊其辞。事实已经核实的地方就直接陈述；确实不确定的地方，按[事实核查](#事实核查)去查证，而不是用模糊措辞带过。
+
+### 参考英文维基
+
+- GTNH 官方英文维基：[wiki.gtnewhorizons.com](https://wiki.gtnewhorizons.com/)。翻译或参考英文维基时，同样要按[事实核查](#事实核查)核对数据，英文维基的内容也可能过时。
+- 页面翻译或参考了英文维基时，在页首加上 [模板:翻译来源](https://gtnh.huijiwiki.com/wiki/模板:翻译来源)：`{{翻译来源|[https://wiki.gtnewhorizons.com/wiki/Rockets Rockets]|译者|时间=2026-11-07}}`。第一个参数是原文链接和标题，第二个参数是译者（可省略），`时间` 是最后一次同步的日期，格式为 `YYYY-MM-DD`。条目页写在 `章节-页眉-尾` 中。
+- 超过 90 天没有同步，或者没填 `时间`，模板会提示内容可能过时，并把页面归入[分类:可能需要同步的页面](https://gtnh.huijiwiki.com/wiki/分类:可能需要同步的页面)。重新对照原文更新后，记得同时更新 `时间`。
+- 条目信息框里的 `属性-英文维基` 填英文维基中对应条目的链接。
 
 ## 维护者规范
 
