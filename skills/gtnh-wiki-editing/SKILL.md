@@ -18,8 +18,8 @@ description: 编辑 GTNH 中文维基（gtnh.huijiwiki.com）时使用：自动�
 |---|---|---|
 | [自动化编辑流程](references/automation.md) | Authkey 与账号、编辑工具、标准流程、缓存与核对、GitHub 仓库与自动化 | 编辑者、维护者 |
 | [维基技术现状](references/wiki-tech.md) | 灰机 MongoDB、`Data:` 数据库与版本、查询模块、条目模板与数据库的关联 | 维护者为主，编辑者了解即可 |
-| [推荐编辑规范](references/style.md) | 写作、条目、链接、导航、查证与维护规范 | 编辑者、维护者 |
-| [scripts/wiki.py](scripts/wiki.py) | 编辑者版命令行工具：拉取、预览、保存、清缓存 | 编辑者、维护者 |
+| [推荐编辑规范](references/style.md) | 事实核查方法、数据库联动模板、条目要点、写作与维护规范 | 编辑者、维护者 |
+| [scripts/wiki.py](scripts/wiki.py) | 编辑者版命令行工具：拉取、预览、保存、清缓存、查询数据库 | 编辑者、维护者 |
 
 ## 最短路径
 
@@ -27,7 +27,7 @@ description: 编辑 GTNH 中文维基（gtnh.huijiwiki.com）时使用：自动�
 
 1. 按[自动化编辑流程](references/automation.md)准备 Authkey 和账号，把 `scripts/wiki.py` 和 `scripts/.env.example` 复制到工作目录。
 2. 每次编辑都走「拉取 → 修改 → 预览 → 保存 → 清缓存 → 核对」。
-3. 新建条目前读一遍[推荐编辑规范](references/style.md)。
+3. 写任何事实之前，按[推荐编辑规范](references/style.md#事实核查)核查：先查线上数据库，拿不准就看源码，大规模核对用本地导出。
 
 **维护者**：在上面的基础上，改动任何读取数据库的模板或模块之前，先读[维基技术现状](references/wiki-tech.md)，弄清数据来自哪个 `Data:` 页面、由哪个模块查询、会影响哪些条目。
 
@@ -35,5 +35,5 @@ description: 编辑 GTNH 中文维基（gtnh.huijiwiki.com）时使用：自动�
 
 - 线上维基是唯一的事实来源：先读线上当前内容，再在它的基础上修改。
 - 数据库每个版本都有人持续上传和维护。不要凭记忆假设当前版本和数据结构，动手前先查[当前数据版本](https://gtnh.huijiwiki.com/wiki/Project:Database)。
-- 内容以游戏数据和源码为准；查不到依据的说法不要写进页面。
+- 内容以游戏数据和源码为准，不臆断；查不到依据时，请用户提供源码仓库或本地导出，而不是凭推测写进页面。
 - 账号、密码、Authkey 和令牌不得写进页面、提交记录或日志。

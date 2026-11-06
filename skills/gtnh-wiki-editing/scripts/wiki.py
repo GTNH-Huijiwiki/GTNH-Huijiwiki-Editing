@@ -8,6 +8,7 @@
     python wiki.py diff -f 本地文件 [...]
     python wiki.py push -f 本地文件 [...] -s "摘要" [--bot] [--minor]
     python wiki.py purge 标题 [标题 ...] [--links]
+    python wiki.py lua "Lua 代码" | -f 代码文件.lua
 
 也可以作为库导入：
     import wiki
@@ -162,6 +163,18 @@ def edit(title, text, summary, bot=False, minor=False, baserevid=None, basetimes
 def parse(text, title, prop="text|categories|limitreportdata"):
     return api_post(action="parse", text=text, title=title, prop=prop,
                     contentmodel="wikitext", disablelimitreport="0")["parse"]
+
+
+def lua(code, module="Module:沙盒/wiki.py"):
+    """在 Scribunto 控制台运行一段 Lua，返回 mw.log 输出与返回值。不需要登录，不会保存任何页面。
+
+    例：lua("local D=require('Module:Database'); mw.logObject(D.queryMaterial('氮').OrePrefixes)")
+    """
+    result = api_post(action="scribunto-console", title=module, content="return {}",
+                      question=code, clear="1")
+    if result.get("type") == "error":
+        raise RuntimeError("Lua 错误：" + str(result.get("message") or result.get("html")))
+    return (result.get("print") or "") + (result.get("return") or "")
 
 
 def purge(titles, links=False):
@@ -321,6 +334,9 @@ def _cli():
     p.add_argument("-s", "--summary", required=True)
     p.add_argument("--bot", action="store_true", help="使用机器人账号并带 bot=1")
     p.add_argument("--minor", action="store_true")
+    p = sub.add_parser("lua", help="在 Scribunto 控制台运行 Lua，用来查询线上数据库")
+    p.add_argument("code", nargs="?", help="Lua 代码；用 mw.log / mw.logObject 输出")
+    p.add_argument("-f", "--file", help="从文件读取 Lua 代码")
     p = sub.add_parser("purge", help="清除页面缓存")
     p.add_argument("titles", nargs="+")
     p.add_argument("--links", action="store_true", help="同时刷新链接表与分类")
@@ -362,6 +378,10 @@ def _cli():
         for path in args.files:
             title, result = push(path, args.summary, bot=args.bot, minor=args.minor)
             print(f"{title}：{'无变化' if 'nochange' in result else '已保存 revid=' + str(result.get('newrevid'))}")
+    elif args.command == "lua":
+        if not (args.code or args.file):
+            raise RuntimeError("请给出 Lua 代码，或用 -f 指定文件")
+        print(lua(_read(args.file) if args.file else args.code))
     elif args.command == "purge":
         for item in purge(args.titles, links=args.links):
             print(f"{item['title']}：{'已清除' if 'purged' in item else '未清除'}")
