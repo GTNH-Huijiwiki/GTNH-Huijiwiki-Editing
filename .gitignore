@@ -1,4 +1,5 @@
 .env
 wikitext/
+logs/
 __pycache__/
 *.pyc

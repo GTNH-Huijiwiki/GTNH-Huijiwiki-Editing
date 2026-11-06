@@ -25,8 +25,8 @@ description: 编辑 GTNH 中文维基（gtnh.huijiwiki.com）时使用：自动�
 
 **编辑者**：
 
-1. 按[自动化编辑流程](references/automation.md)准备 Authkey 和账号，把 `scripts/wiki.py` 和 `scripts/.env.example` 复制到工作目录。
-2. 每次编辑都走「拉取 → 修改 → 预览 → 保存 → 清缓存 → 核对」。
+1. 按[自动化编辑流程](references/automation.md#工作区)克隆本仓库作为工作区，准备 Authkey 和账号。
+2. 每个任务先建立[任务日志](references/automation.md#任务日志)文件夹；每次编辑都走「拉取 → 修改 → 预览 → 保存 → 清缓存 → 核对」。
 3. 写任何事实之前，按[推荐编辑规范](references/style.md#事实核查)核查：先查线上数据库，拿不准就看源码，大规模核对用本地导出。
 
 **维护者**：在上面的基础上，改动任何读取数据库的模板或模块之前，先读[维基技术现状](references/wiki-tech.md)，弄清数据来自哪个 `Data:` 页面、由哪个模块查询、会影响哪些条目。

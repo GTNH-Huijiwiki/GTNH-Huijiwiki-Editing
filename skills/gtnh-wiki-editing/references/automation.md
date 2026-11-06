@@ -35,11 +35,38 @@
 - 零件和站点 JS 只能由有开发者权限的个人账号更新，自动化流程无法代劳。
 - 机器人账号只用于批量或自动化编辑，不能当作个人账号使用；反过来，大量编辑也不要用个人账号刷屏最近更改。
 
-### 本地环境
+### 工作区
+
+推荐直接把 [GTNH-Huijiwiki-Editing](https://github.com/GTNH-Huijiwiki/GTNH-Huijiwiki-Editing) 克隆到本地作为编辑工作区，所有命令都在仓库根目录运行：
+
+```
+GTNH-Huijiwiki-Editing/
+  .env          # 账号与 Authkey，由 scripts/.env.example 复制后填写
+  wikitext/     # 线上页面的本地镜像，wiki.py 自动创建
+  logs/         # 任务日志，见下文
+  skills/gtnh-wiki-editing/scripts/wiki.py
+```
+
+`.env`、`wikitext/`、`logs/` 都已写进 `.gitignore`，不会被提交。
 
 1. 安装 Python 3.9 或更高版本（脚本只用标准库）。
-2. 把 [scripts/wiki.py](../scripts/wiki.py) 和 [scripts/.env.example](../scripts/.env.example) 复制到工作目录，将 `.env.example` 另存为 `.env` 并填写 `AUTHKEY` 与账号。
-3. 运行 `python wiki.py whoami` 确认能登录；维护者再运行 `python wiki.py whoami --bot` 确认机器人账号。
+2. 在仓库根目录把 `skills/gtnh-wiki-editing/scripts/.env.example` 复制为 `.env`，填写 `AUTHKEY` 与账号。
+3. 运行 `python skills/gtnh-wiki-editing/scripts/wiki.py whoami` 确认能登录；维护者再加 `--bot` 确认机器人账号。下文的 `python wiki.py …` 都指这个脚本。
+
+`wiki.py` 把页面保存到**当前目录**下的 `wikitext/`，配置从当前目录或脚本所在目录的 `.env` 读取；也可以用环境变量 `WIKI_DIR` 指定镜像目录。
+
+### 任务日志
+
+适用：所有编辑者，AI 代理必须遵守。
+
+每个编辑任务开始时，在工作区建立一个以日期和任务命名的日志文件夹，例如 `logs/2026-11-07-星系条目重排/`。任务过程中的这些东西都放在里面：
+
+- 改动前的页面备份：批量修改、移动、删除前，先把原内容存一份；
+- 临时脚本、Lua 查询代码和它们的输出；
+- 预览或核对的结果，例如校验提示、红链、高开销函数次数；
+- `记录.md`：做了什么、改了哪些页面（附 revid）、还有哪些没完成或待确认。
+
+任务做到一半中断、需要回退或之后有人追问时，都从这个文件夹查起。不要把临时文件散放在工作区根目录或镜像目录里。
 
 ## 编辑工具
 

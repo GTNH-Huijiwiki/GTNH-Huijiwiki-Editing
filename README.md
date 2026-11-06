@@ -20,6 +20,12 @@ skills/
 文档之间请用相对路径链接（如 `references/style.md`），指向本维基页面时写完整 URL
 （`https://gtnh.huijiwiki.com/wiki/页面名`），发布时会自动改写为维基内部链接。
 
+## 作为编辑工作区
+
+本仓库也是推荐的本地编辑工作区：在根目录放 `.env`，用 `python skills/gtnh-wiki-editing/scripts/wiki.py` 拉取和保存页面，
+本地镜像在 `wikitext/`，每个任务的日志在 `logs/<日期>-<任务名>/`。这三者都在 `.gitignore` 中，不会被提交。
+详见[自动化编辑流程](skills/gtnh-wiki-editing/references/automation.md#工作区)。
+
 ## 自动发布
 
 `main` 分支上 `skills/` 目录有改动时，`.github/workflows/notify-publish.yml` 会通知
