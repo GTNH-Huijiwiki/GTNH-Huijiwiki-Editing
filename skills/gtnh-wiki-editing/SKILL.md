@@ -18,7 +18,7 @@ description: 编辑 GTNH 中文维基（gtnh.huijiwiki.com）时使用：自动�
 |---|---|---|
 | [自动化编辑流程](references/automation.md) | Authkey 与账号、编辑工具、标准流程、缓存与核对、GitHub 仓库与自动化 | 编辑者、维护者 |
 | [维基技术现状](references/wiki-tech.md) | 灰机 MongoDB、`Data:` 数据库与版本、查询模块、条目模板与数据库的关联 | 维护者为主，编辑者了解即可 |
-| [推荐编辑规范](references/style.md) | 事实核查方法、沙盒测试、数据库联动模板、条目要点、写作风格（AI 生成内容、参考英文维基）与维护规范 | 编辑者、维护者 |
+| [推荐编辑规范](references/style.md) | 事实核查方法、沙盒测试、数据库联动模板、条目要点、写作风格（历史章节、AI 生成内容、参考英文维基）与维护规范 | 编辑者、维护者 |
 | [scripts/wiki.py](scripts/wiki.py) | 编辑者版命令行工具：拉取、预览、保存、清缓存、查询数据库 | 编辑者、维护者 |
 
 ## 最短路径
