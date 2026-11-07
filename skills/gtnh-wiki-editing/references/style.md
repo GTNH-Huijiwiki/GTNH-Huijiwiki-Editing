@@ -10,21 +10,35 @@
 
 ### 第一步：查线上数据库
 
-物品、配方、矿辞、材料、任务、维度等导出数据都在线上数据库里，先用简单的查询核对。最省事的办法是用 [scripts/wiki.py](../scripts/wiki.py) 的 `lua` 命令，在 Scribunto 控制台里调用现成模块。它不需要登录，也不会保存任何页面：
+物品、配方、矿辞、材料、任务、维度等导出数据都在线上数据库里，先用简单的查询核对。最省事的办法是用 [scripts/wiki.py](../scripts/wiki.py) 的 `lua` 命令，在 Scribunto 控制台里调用现成模块。它不需要登录，也不会保存任何页面。
+
+**大部分查询函数都支持批量查询，要查多个对象时一定先用批量写法。** 每次 `lua` 调用的高开销函数次数有上限（100 次），循环里逐个查询很快就会超限，报 `too many expensive function calls`，只能拆成很多次调用；批量查询把多个条件合并成一次或几次数据库聚合，既快又不容易超限。
+
+| 函数 | 批量写法 | 返回 |
+|---|---|---|
+| `Module:Recipe` 的 `query` | `query{query={条件1,条件2,…},version=…}`，每个条件含 `output`/`input`、`type` | 与条件一一对应的结果组，查不到的位置是空表 |
+| `Module:Database` 的 `queryIngredients` | `translatedNames={…}` 或 `keys={…}` 填多个值 | 以 key 和中文名为索引的物品映射 |
+| `Module:Database` 的 `queryIngredientsAdvanced` | 同一字段填多个值时按「或」匹配，不同字段按「且」 | 同上 |
+| `Module:Database` 的 `queryMaterialsByNames` | `{'英文注册名1','英文注册名2',…}` | 以注册名为索引的 GT 材料表 |
 
 ```bash
-# 按精确中文名找物品，确认 key 和所属模组
-python wiki.py lua "local D=require('Module:Database'); for key,item in pairs(D.queryIngredients{translatedNames={'粗氮冰'}}) do if key==item.key then mw.log(key,item.translatedName,item.mod) end end"
+# 一次查多个物品的 key 和所属模组
+python wiki.py lua "local D=require('Module:Database'); for key,item in pairs(D.queryIngredients{translatedNames={'粗氮冰','氧气管道','无尽板'}}) do if key==item.key then mw.log(key,item.translatedName,item.mod) end end"
 
-# 名称记不准时模糊搜索
-python wiki.py lua "local found=require('Module:Database').queryIngredientsAdvanced{translatedNames={'氧气罐'},nameFuzzy=true,limit=20}; for key,item in pairs(found) do if key==item.key then mw.log(key,item.translatedName) end end"
+# 名称记不准时模糊搜索，可同时给多个关键词
+python wiki.py lua "local found=require('Module:Database').queryIngredientsAdvanced{translatedNames={'氧气罐','氧气压缩机'},nameFuzzy=true,limit=20}; for key,item in pairs(found) do if key==item.key then mw.log(key,item.translatedName) end end"
 
-# 按配方类型查某个物品的配方数量
-python wiki.py lua "mw.log(#require('Module:Recipe').query{output='@GalacticraftCore:tile.oxygenPipe',type='压模机'})"
+# 一次查多组配方：每个条件指定产物和配方类型，结果与条件按位置对应
+python wiki.py lua "local qs={{output='UEV机械方块',type='组装机'},{output='UEV机械方块',type='有序合成'},{output='UEV机器外壳',type='组装机'}}; for i,g in ipairs(require('Module:Recipe').query{query=qs}) do mw.log(qs[i].output,qs[i].type,#g,g[1] and g[1]['固体输入1']) end"
 
-# 查 GT 材料的各形态
-python wiki.py lua "mw.logObject(require('Module:Database').queryMaterial('氮').OrePrefixes)"
+# 同样的批量查询加上 version，对比旧版本数据库
+python wiki.py lua "local qs={{output='UEV机械方块',type='组装机'}}; for i,g in ipairs(require('Module:Recipe').query{query=qs,version='legacy'}) do mw.log(qs[i].output,#g,g[1] and g[1]['固体输入1']) end"
+
+# 一次查多种 GT 材料（英文注册名）
+python wiki.py lua "for name,m in pairs(require('Module:Database').queryMaterialsByNames{'Infinity','TranscendentMetal','Bedrockium'}) do mw.log(name,m.LocalizedName) end"
 ```
+
+条件很多时（例如十几个电压等级的全部配方），先在 Lua 里用循环拼出条件表，再交给一次批量查询，不要在循环里逐个调用查询函数。代码较长时写进任务日志文件夹里的 `.lua` 文件，用 `python wiki.py lua -f 文件` 运行。单个对象的详细信息仍可用单查函数，例如 `require('Module:Database').queryMaterial('氮')` 查中文名对应的材料及其各形态。
 
 也可以把一段模板调用写进文件，用 `python wiki.py preview -f 文件` 看渲染结果，例如 `{{Recipe|output=氧气管道|type=压模机}}`；或者直接写到[自己的沙盒](#在沙盒里测试)里保存后查看。
 
