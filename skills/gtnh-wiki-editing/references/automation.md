@@ -41,17 +41,20 @@
 
 ```
 GTNH-Huijiwiki-Editing/
+  wiki.py       # 日常使用的入口，转发到技能中的 scripts/wiki.py
   .env          # 账号与 Authkey，由 scripts/.env.example 复制后填写
   wikitext/     # 线上页面的本地镜像，wiki.py 自动创建
   logs/         # 任务日志，见下文
-  skills/gtnh-wiki-editing/scripts/wiki.py
+  skills/gtnh-wiki-editing/scripts/wiki.py   # 工具源码
 ```
 
 `.env`、`wikitext/`、`logs/` 都已写进 `.gitignore`，不会被提交。
 
 1. 安装 Python 3.9 或更高版本（脚本只用标准库）。
 2. 在仓库根目录把 `skills/gtnh-wiki-editing/scripts/.env.example` 复制为 `.env`，填写 `AUTHKEY` 与账号。
-3. 运行 `python skills/gtnh-wiki-editing/scripts/wiki.py whoami` 确认能登录；维护者再加 `--bot` 确认机器人账号。下文的 `python wiki.py …` 都指这个脚本。
+3. 在仓库根目录运行 `python wiki.py whoami` 确认能登录；维护者再加 `--bot` 确认机器人账号。
+
+根目录的 `wiki.py` 只是转发入口，命令行和 `import wiki` 的用法都与技能中的 `scripts/wiki.py` 相同；修改工具请改后者。不在本仓库里使用时，把 `scripts/wiki.py` 复制到自己的工作目录即可。
 
 `wiki.py` 把页面保存到**当前目录**下的 `wikitext/`，配置从当前目录或脚本所在目录的 `.env` 读取；也可以用环境变量 `WIKI_DIR` 指定镜像目录。
 

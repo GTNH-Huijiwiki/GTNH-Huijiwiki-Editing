@@ -1,18 +1,41 @@
 # Agent Instructions
 
-本仓库既是 GTNH 中文维基编辑技能的源仓库，也是推荐的本地编辑工作区。
+本仓库是 GTNH 中文维基（gtnh.huijiwiki.com）的编辑技能 `gtnh-wiki-editing`，同时也是推荐的本地编辑工作区。
+
+## 先读技能
+
+无论做什么，开始前先读 `skills/gtnh-wiki-editing/SKILL.md`，再按任务读它链接的文档：
+
+- `references/automation.md`：Authkey、账号与权限、工作区、任务日志、标准编辑流程、缓存。
+- `references/wiki-tech.md`：数据库版本、数据集、查询模块、条目模板与数据库的关联。
+- `references/style.md`：事实核查方法、沙盒测试、数据库联动模板、写作风格。
+
+技能中的规定优先于你的通用习惯。如果你的环境已经安装了同名技能，它与本仓库的 `skills/` 是同一份内容，以本仓库中的文件为准。
 
 ## 编辑维基
 
-- 编辑 GTNH 中文维基（gtnh.huijiwiki.com）时，按 `skills/gtnh-wiki-editing/SKILL.md` 及其 `references/` 中的文档操作。
-- 在仓库根目录运行 `python skills/gtnh-wiki-editing/scripts/wiki.py …`。本地镜像在 `wikitext/`，账号与 Authkey 在 `.env`。
-- `wikitext/` 是线上页面的镜像，不是 Git 管理的内容：不要提交镜像，也不要用 Git 分支来管理页面编辑。
-- 每个任务开始时建立 `logs/<YYYY-MM-DD>-<任务名>/`，把改动前的备份、临时脚本、查询结果和 `记录.md` 放在里面。
-- 批量编辑使用机器人账号（`--bot`），每次编辑都带 `bot=1`，并先核对登录的确实是机器人账号。
-- 可以在 `Project:沙盒/<用户名>/` 下自由测试。
+适用于克隆本仓库来编辑维基的人和 AI 代理：
 
-## 修改技能本身
+- 在仓库根目录运行 `python wiki.py …`（拉取、预览、保存、清缓存、查询数据库）。它转发到技能中的 `scripts/wiki.py`。
+- 账号与 Authkey 放在根目录的 `.env`（由 `skills/gtnh-wiki-editing/scripts/.env.example` 复制）；本地镜像在 `wikitext/`。两者都不提交。
+- 每个任务开始时建立 `logs/<YYYY-MM-DD>-<任务名>/`，放改动前的备份、临时脚本、查询结果和 `记录.md`。
+- 写进页面的事实先核查：先查线上数据库，拿不准就请用户提供源码仓库，大规模核对请用户用 GTNH-Dumper 导出本地数据。不要臆断。
+- 批量编辑使用机器人账号（`--bot`），每次编辑都带 `bot=1`。可以在 `Project:沙盒/<用户名>/` 下自由测试。
 
-- 只修改 `skills/` 下的源文件；维基上 `Project:编辑技能/` 的页面是发布生成的副本，会被下次发布覆盖。
-- 文档之间用相对路径链接，指向本维基的页面写完整 URL，发布时会自动改写。
-- 推送到 `main` 后，由 GTNH-Huijiwiki-Actions 的「发布编辑技能到维基」流程发布。
+## 在已有工作区里继续
+
+适用于这个工作区已经编辑过很多轮的情况：
+
+- 先看 `logs/` 里最近的 `记录.md`，了解之前做了什么、还有哪些遗留事项，再动手。
+- 本地镜像可能早已过时，其他人也可能改过线上页面：修改任何已有页面前都先 `pull`。`wiki.py` 保存时会拒绝覆盖你拉取之后被别人改过的页面。
+- 不要覆盖、删除与当前任务无关的本地修改或日志。
+
+## 修改技能
+
+适用于来改进技能本身的人：
+
+- 只修改 `skills/` 下的源文件和根目录的说明文件。维基上 `Project:编辑技能/` 的页面是发布生成的副本，会被下次发布覆盖。
+- 文档之间用相对路径链接；指向本维基的页面写完整 URL（`https://gtnh.huijiwiki.com/wiki/页面名`），发布时会自动改写为站内链接。
+- 数据库版本、权限等会变化的内容，写成「怎样查」，具体数值注明截至日期。
+- 推送到 `main` 后，由 GTNH-Huijiwiki-Actions 仓库的「发布编辑技能到维基」流程发布。
+- `wikitext/`、`logs/`、`.env` 永远不要提交。

@@ -387,7 +387,7 @@ def _cli():
             print(f"{item['title']}：{'已清除' if 'purged' in item else '未清除'}")
 
 
-if __name__ == "__main__":
+def main():
     for stream in (sys.stdout, sys.stderr):
         if hasattr(stream, "reconfigure"):
             stream.reconfigure(encoding="utf-8")
@@ -395,3 +395,7 @@ if __name__ == "__main__":
         _cli()
     except RuntimeError as error:
         sys.exit(f"错误：{error}")
+
+
+if __name__ == "__main__":
+    main()
