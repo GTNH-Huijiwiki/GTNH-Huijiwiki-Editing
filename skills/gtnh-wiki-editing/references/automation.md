@@ -8,7 +8,7 @@
 
 ### Authkey
 
-灰机 Wiki 在 CDN 层对外部程序做了人机检测。不带 Authkey 直接请求 `https://gtnh.huijiwiki.com/api.php`，会收到 403 和一个「Just a moment...」质询页，读写都做不了。在请求头里带上 `X-authkey: <你的 Authkey>`，就能正常调用 MediaWiki API。
+灰机 Wiki 在 CDN 层对外部程序做了人机检测。不带 Authkey 直接请求 `https://gtnh.huijiwiki.com/api.php`，会收到 403 和一个“Just a moment...”质询页，读写都做不了。在请求头里带上 `X-authkey: <你的 Authkey>`，就能正常调用 MediaWiki API。
 
 - **来源**：Authkey 由灰机 Wiki 为本站签发，向维基管理员索要。
 - **用途**：只解决程序访问 API 的问题，不代表任何编辑权限；编辑权限由登录的账号决定。
@@ -20,7 +20,7 @@
 | 身份 | 环境变量 | 用途 | 说明 |
 |---|---|---|---|
 | 个人编辑账号 | `EDITOR_USERNAME`、`EDITOR_PASSWORD` | 日常编辑、少量页面修改 | 编辑记录归属于本人；权限取决于所在用户组 |
-| 机器人账号 | `BOT_USERNAME`、`BOT_PASSWORD` | 短时间内大量编辑、数据上传、批量重定向与移动 | 本站机器人账号为「钛管道」；只交给维护者 |
+| 机器人账号 | `BOT_USERNAME`、`BOT_PASSWORD` | 短时间内大量编辑、数据上传、批量重定向与移动 | 本站机器人账号为“钛管道”；只交给维护者 |
 
 用 `python wiki.py whoami` 可以查看自己账号所在的用户组和关键权限，加 `--bot` 查看机器人账号。以下是截至 2026-11-07 的实际情况，用户组调整后以 `whoami` 为准：
 
@@ -111,7 +111,7 @@ GTNH-Huijiwiki-Editing/
 1. **拉取**：`python wiki.py pull 页面名`。已有页面一定要从线上当前版本开始改。
 2. **修改**：只改需要改的部分，不要顺手重排无关内容。
 3. **预览**：`python wiki.py preview -f wikitext/0/页面名.wikitext`。确认没有 Lua 错误；条目页的校验提示（缺重定向、未收录进导航、获取不到配方等）要处理掉，或确认是数据本身缺失。需要实际保存才能验证的改动（如脚本的保存流程），先在 `Project:沙盒/<你的用户名>/` 下自由测试，见[在沙盒里测试](style.md#在沙盒里测试)。
-4. **保存**：`python wiki.py push -f … -s "简短的中文摘要"`。摘要写做了什么，例如「补充氧气罐续航表」。
+4. **保存**：`python wiki.py push -f … -s "简短的中文摘要"`。摘要写做了什么，例如“补充氧气罐续航表”。
 5. **清缓存**：`python wiki.py purge 页面名 --links`。改了模板或模块时，还要清除用到它的测试页面。
 6. **核对**：在浏览器里打开页面检查实际效果；改了样式或脚本时先强制刷新（见下文[缓存](#缓存)）。改动响应式布局时，宽屏和窄屏都要看。没有在线上核对过，就不要说问题已经修好；确实没法核对时，要说明原因。
 
@@ -129,7 +129,7 @@ GTNH-Huijiwiki-Editing/
 
 适用：所有编辑者，维护者需要全部掌握。
 
-维基上有四层缓存，表现为「改了但看不到」：
+维基上有四层缓存，表现为“改了但看不到”：
 
 | 缓存 | 表现 | 处理办法 |
 |---|---|---|
@@ -155,4 +155,4 @@ GTNH-Huijiwiki-Editing/
 自动化相关的约定：
 
 - Actions 仓库的 `Wiki` 环境保存 `WIKI_AUTHKEY`、`BOT_USERNAME`、`BOT_PASSWORD` 三个机密，所有写维基的流程都在这个环境中运行。
-- 本技能在 Editing 仓库的 `main` 分支更新后，由 Actions 仓库的「发布编辑技能到维基」流程自动发布到[维基上的技能页面](https://gtnh.huijiwiki.com/wiki/Project:编辑技能/gtnh-wiki-editing)。维基上的副本会被下次发布覆盖，修改请提交到 Editing 仓库。
+- 本技能在 Editing 仓库的 `main` 分支更新后，由 Actions 仓库的“发布编辑技能到维基”流程自动发布到[维基上的技能页面](https://gtnh.huijiwiki.com/wiki/Project:编辑技能/gtnh-wiki-editing)。维基上的副本会被下次发布覆盖，修改请提交到 Editing 仓库。
