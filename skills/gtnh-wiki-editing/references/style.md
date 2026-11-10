@@ -129,6 +129,22 @@ python wiki.py lua "for name,m in pairs(require('Module:Database').queryMaterial
 ### 参考英文维基
 
 - GTNH 官方英文维基：[wiki.gtnewhorizons.com](https://wiki.gtnewhorizons.com/)。翻译或参考英文维基时，同样要按[事实核查](#事实核查)核对数据，英文维基的内容也可能过时。
+- 读取英文维基（只读，不需要 Authkey）：用 `curl` 或 Python 的 `urllib` 请求它的 MediaWiki API `https://wiki.gtnewhorizons.com/w/api.php`：
+
+  ```bash
+  # 页面源码（wikitext）
+  curl -sL "https://wiki.gtnewhorizons.com/w/index.php?title=Rockets&action=raw"
+  # 搜索标题
+  curl -s "https://wiki.gtnewhorizons.com/w/api.php?action=query&list=search&srsearch=oxygen&format=json"
+  # 章节锚点
+  curl -s "https://wiki.gtnewhorizons.com/w/api.php?action=parse&page=Nanochip_Assembly_Complex&prop=sections&format=json"
+  # 最新版本号
+  curl -s "https://wiki.gtnewhorizons.com/w/api.php?action=query&prop=revisions&titles=Rockets&rvprop=ids|timestamp|user&format=json&formatversion=2"
+  # 图片地址
+  curl -s "https://wiki.gtnewhorizons.com/w/api.php?action=query&titles=File:Rocket.jpg&prop=imageinfo&iiprop=url|size&format=json&formatversion=2"
+  ```
+
+  标题里的空格用下划线；Windows 上用 Python 解析输出时设置 `PYTHONIOENCODING=utf-8`。
 - 页面翻译或参考了英文维基时，在页首加上 [模板:翻译来源](https://gtnh.huijiwiki.com/wiki/模板:翻译来源)：`{{翻译来源|[https://wiki.gtnewhorizons.com/wiki/Rockets Rockets]|译者|时间=2026-11-07}}`。第一个参数是原文链接和标题，第二个参数是译者（可省略），`时间` 是最后一次同步的日期，格式为 `YYYY-MM-DD`。条目页写在 `章节-页眉-尾` 中。
 - 超过 90 天没有同步，或者没填 `时间`，模板会提示内容可能过时，并把页面归入[分类:可能需要同步的页面](https://gtnh.huijiwiki.com/wiki/分类:可能需要同步的页面)。重新对照原文更新后，记得同时更新 `时间`。
 - 条目信息框里的 `属性-英文维基` 填英文维基中对应条目的链接。
