@@ -96,7 +96,7 @@ GTNH-Huijiwiki-Editing/
 | `python wiki.py pull 标题…` | 拉取页面到本地，并记录拉取时的版本号 |
 | `python wiki.py preview -f 文件` | 用线上模板预览本地内容，报告 Lua 错误、条目校验提示、高开销函数次数和分类 |
 | `python wiki.py diff -f 文件` | 比较本地文件与线上当前内容 |
-| `python wiki.py push -f 文件… -s 摘要 [--bot]` | 保存；如果线上在你拉取之后又被别人改过，会报编辑冲突而不是覆盖 |
+| `python wiki.py push -f 文件… -s 摘要 [--bot] [-j 并行数]` | 保存；如果线上在你拉取之后又被别人改过，会报编辑冲突而不是覆盖。默认按顺序保存；`-j N` 用 N 个线程同时保存，单个页面失败不影响其他页面，最后汇总失败数。**并行保存极其容易给服务器造成负载，通常设为 8 或更低**，批量创建页面还可能触发限速（被限速的页面会失败，等几分钟再重试） |
 | `python wiki.py purge 标题… [--links]` | 清除页面缓存；`--links` 同时刷新链接表和分类 |
 | `python wiki.py lua "代码"` | 在 Scribunto 控制台运行 Lua，查询线上数据库，不保存页面；用法见[事实核查](style.md#事实核查) |
 

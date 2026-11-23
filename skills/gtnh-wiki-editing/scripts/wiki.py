@@ -6,7 +6,7 @@
     python wiki.py pull -f 本地文件 [...]
     python wiki.py preview -f 本地文件 [--html 输出.html]
     python wiki.py diff -f 本地文件 [...]
-    python wiki.py push -f 本地文件 [...] -s "摘要" [--bot] [--minor]
+    python wiki.py push -f 本地文件 [...] -s "摘要" [--bot] [--minor] [-j 并行数]
     python wiki.py purge 标题 [标题 ...] [--links]
     python wiki.py lua "Lua 代码" | -f 代码文件.lua
 
@@ -38,6 +38,7 @@ import json
 import os
 import re
 import sys
+import threading
 import urllib.parse
 import urllib.request
 
@@ -231,6 +232,9 @@ def _revisions_path():
     return os.path.join(WIKI_DIR, ".revisions.json")
 
 
+_revisions_lock = threading.RLock()
+
+
 def _load_revisions():
     try:
         with open(_revisions_path(), encoding="utf-8") as f:
@@ -260,16 +264,18 @@ def pull(title):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8", newline="") as f:
         f.write(page["text"])
-    revisions = _load_revisions()
-    revisions[path_to_title(path)] = {"revid": page["revid"], "timestamp": page["timestamp"]}
-    _save_revisions(revisions)
+    with _revisions_lock:
+        revisions = _load_revisions()
+        revisions[path_to_title(path)] = {"revid": page["revid"], "timestamp": page["timestamp"]}
+        _save_revisions(revisions)
     return path
 
 
 def push(path, summary, bot=False, minor=False):
     """保存本地文件。已有页面必须先 pull，并以拉取时的版本为基准检测编辑冲突。"""
     title = path_to_title(path)
-    base = _load_revisions().get(title)
+    with _revisions_lock:
+        base = _load_revisions().get(title)
     current = get_page(title)
     if base:
         # MediaWiki 不把同一账号的先后修改视为冲突，所以在本地先比对版本号。
@@ -283,10 +289,68 @@ def push(path, summary, bot=False, minor=False):
             raise RuntimeError(f"{title} 已存在但没有拉取记录，请先 pull 并合并你的修改")
         result = edit(title, _read(path), summary, bot=bot, minor=minor, createonly=True)
     if "newrevid" in result:
-        revisions = _load_revisions()
-        revisions[title] = {"revid": result["newrevid"], "timestamp": result["newtimestamp"]}
-        _save_revisions(revisions)
+        with _revisions_lock:
+            revisions = _load_revisions()
+            revisions[title] = {"revid": result["newrevid"], "timestamp": result["newtimestamp"]}
+            _save_revisions(revisions)
     return title, result
+
+
+MAX_RECOMMENDED_JOBS = 8
+
+
+def _push_message(title, result):
+    return f"{title}：{'无变化' if 'nochange' in result else '已保存 revid=' + str(result.get('newrevid'))}"
+
+
+def push_many(paths, summary, bot=False, minor=False, jobs=1, report=print):
+    """保存多个本地文件，返回没有保存成功的数量。
+
+    jobs=1 时按顺序保存，遇到错误立即抛出；jobs>1 时用多个线程同时保存（每个线程一次保存一个页面，
+    等服务器保存并解析完再取下一个），单个页面失败不影响其他页面，最后汇总失败。
+    并行保存极其容易给服务器造成负载，jobs 通常设为 8 或更低。
+    """
+    paths = list(dict.fromkeys(paths))
+    if jobs < 1:
+        raise RuntimeError("并行数必须大于 0")
+    if jobs == 1:
+        for path in paths:
+            report(_push_message(*push(path, summary, bot=bot, minor=minor)))
+        return 0
+    jobs = min(jobs, len(paths)) or 1
+    lock = threading.Lock()
+    queue = list(reversed(paths))
+    stop = threading.Event()
+    counters = {"done": 0, "fail": 0}
+
+    def worker():
+        while not stop.is_set():
+            with lock:
+                if not queue:
+                    return
+                path = queue.pop()
+            try:
+                message, failed = _push_message(*push(path, summary, bot=bot, minor=minor)), False
+            except Exception as error:  # 单个页面失败（冲突、超时等）不拖累其余页面
+                message, failed = f"{path}：失败 {error}", True
+            with lock:
+                counters["done"] += 1
+                counters["fail"] += failed
+                report(f"[{counters['done']}/{len(paths)}] {message}")
+
+    threads = [threading.Thread(target=worker, daemon=True) for _ in range(jobs)]
+    for thread in threads:
+        thread.start()
+    try:
+        for thread in threads:
+            while thread.is_alive():
+                thread.join(timeout=0.5)
+    except KeyboardInterrupt:
+        stop.set()
+        report("已中断：正在等待进行中的保存结束……")
+        for thread in threads:
+            thread.join()
+    return counters["fail"] + len(queue)
 
 
 # ── 预览检查 ─────────────────────────────────────────────────
@@ -334,6 +398,9 @@ def _cli():
     p.add_argument("-s", "--summary", required=True)
     p.add_argument("--bot", action="store_true", help="使用机器人账号并带 bot=1")
     p.add_argument("--minor", action="store_true")
+    p.add_argument("-j", "--jobs", type=int, default=1,
+                   help="并行保存的线程数，默认 1（顺序）。警告：并行保存极其容易给服务器造成负载，"
+                        "通常设为 8 或更低；批量创建页面还可能触发限速")
     p = sub.add_parser("lua", help="在 Scribunto 控制台运行 Lua，用来查询线上数据库")
     p.add_argument("code", nargs="?", help="Lua 代码；用 mw.log / mw.logObject 输出")
     p.add_argument("-f", "--file", help="从文件读取 Lua 代码")
@@ -375,9 +442,14 @@ def _cli():
             print("\n".join(lines) or f"{title}：无差异")
     elif args.command == "push":
         print(f"已登录：{login(bot=args.bot)}")
-        for path in args.files:
-            title, result = push(path, args.summary, bot=args.bot, minor=args.minor)
-            print(f"{title}：{'无变化' if 'nochange' in result else '已保存 revid=' + str(result.get('newrevid'))}")
+        if args.jobs > 1:
+            print(f"警告：并行保存（{args.jobs} 个线程）极其容易给服务器造成负载，通常设为 {MAX_RECOMMENDED_JOBS} 或更低。",
+                  file=sys.stderr)
+            if args.jobs > MAX_RECOMMENDED_JOBS:
+                print(f"警告：{args.jobs} 超过了建议的上限 {MAX_RECOMMENDED_JOBS}，请确认确实需要。", file=sys.stderr)
+        failed = push_many(args.files, args.summary, bot=args.bot, minor=args.minor, jobs=args.jobs)
+        if failed:
+            sys.exit(f"错误：{failed} 个页面没有保存成功")
     elif args.command == "lua":
         if not (args.code or args.file):
             raise RuntimeError("请给出 Lua 代码，或用 -f 指定文件")
