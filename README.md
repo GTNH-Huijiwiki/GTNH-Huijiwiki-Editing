@@ -24,7 +24,9 @@ skills/
 
 本仓库也是推荐的本地编辑工作区：在根目录放 `.env`，用根目录的 `python wiki.py` 拉取、预览和保存页面
 （它转发到技能中的 `scripts/wiki.py`），本地镜像在 `wikitext/`，每个任务的日志在 `logs/<日期>-<任务名>/`。
-`.env`、`wikitext/`、`logs/` 都在 `.gitignore` 中，不会被提交。
+用 `python wiki.py pull --en …` 可以把英文维基的页面源码只读拉到平行的 `wikitext-en/`，用于翻译和对照。
+`.env`、`wikitext/`、`wikitext-en/`、`logs/` 都在 `.gitignore` 中，不会被提交。
+脚本测试在 `tests/`，运行 `python -m unittest discover -s tests`。
 详见[自动化编辑流程](skills/gtnh-wiki-editing/references/automation.md#工作区)。
 
 ## 自动发布
