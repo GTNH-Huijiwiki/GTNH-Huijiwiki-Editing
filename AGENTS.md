@@ -18,6 +18,7 @@
 
 - 在仓库根目录运行 `python wiki.py …`（拉取、预览、保存、清缓存、查询数据库）。它转发到技能中的 `scripts/wiki.py`。
 - 账号与 Authkey 放在根目录的 `.env`（由 `skills/gtnh-wiki-editing/scripts/.env.example` 复制）；本地镜像在 `wikitext/`。两者都不提交。
+- 对照英文维基时用 `python wiki.py pull --en …`，只读拉到与 `wikitext/` 平行的 `wikitext-en/`，同样不提交。
 - 每个任务开始时建立 `logs/<YYYY-MM-DD>-<任务名>/`，放改动前的备份、临时脚本、查询结果和 `记录.md`。
 - 写进页面的事实先核查：先查线上数据库，拿不准就请用户提供源码仓库，大规模核对请用户用 GTNH-Dumper 导出本地数据。不要臆断。
 - 批量编辑使用机器人账号（`--bot`），每次编辑都带 `bot=1`。没有机器人账号就自己注册一个，向管理员申请机器人权限（见自动化文档的“注册机器人账号”）。可以在 `Project:沙盒/<用户名>/` 下自由测试。
@@ -38,4 +39,5 @@
 - 文档之间用相对路径链接；指向本维基的页面写完整 URL（`https://gtnh.huijiwiki.com/wiki/页面名`），发布时会自动改写为站内链接。
 - 数据库版本、权限等会变化的内容，写成“怎样查”，具体数值注明截至日期。
 - 推送到 `main` 后，由 GTNH-Huijiwiki-Actions 仓库的“发布编辑技能到维基”流程发布。
-- `wikitext/`、`logs/`、`.env` 永远不要提交。
+- 改了 `scripts/wiki.py` 后运行 `python -m unittest discover -s tests`（不访问网络）。
+- `wikitext/`、`wikitext-en/`、`logs/`、`.env` 永远不要提交。

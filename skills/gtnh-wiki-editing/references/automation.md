@@ -57,11 +57,12 @@ GTNH-Huijiwiki-Editing/
   wiki.py       # 日常使用的入口，转发到技能中的 scripts/wiki.py
   .env          # 账号与 Authkey，由 scripts/.env.example 复制后填写
   wikitext/     # 线上页面的本地镜像，wiki.py 自动创建
+  wikitext-en/  # 英文维基的只读镜像，见下文“英文维基镜像”
   logs/         # 任务日志，见下文
   skills/gtnh-wiki-editing/scripts/wiki.py   # 工具源码
 ```
 
-`.env`、`wikitext/`、`logs/` 都已写进 `.gitignore`，不会被提交。
+`.env`、`wikitext/`、`wikitext-en/`、`logs/` 都已写进 `.gitignore`，不会被提交。
 
 1. 安装 Python 3.9 或更高版本（脚本只用标准库）。
 2. 在仓库根目录把 `skills/gtnh-wiki-editing/scripts/.env.example` 复制为 `.env`，填写 `AUTHKEY` 与账号。
@@ -116,6 +117,37 @@ GTNH-Huijiwiki-Editing/
 本地 `wikitext/` 是线上页面的镜像，不是 Git 仓库：不要用 Git 提交、分支来管理页面编辑。
 
 自己写脚本时要注意：GET 请求的 API 结果可能被 CDN 缓存，读到的是旧版本；需要最新内容（例如保存前核对版本）时用 POST 请求。`wiki.py` 的所有请求都用 POST。
+
+## 英文维基镜像
+
+适用：所有编辑者。翻译页面、同步译文、批量对照英文内容时使用。
+
+`wiki.py` 可以把 [GTNH 英文维基](https://wiki.gtnewhorizons.com/)的页面源码拉到与 `wikitext/` 平行的 `wikitext-en/`。访问英文站**只读**，不需要 Authkey 和账号，脚本也不会把中文站的 Authkey、Cookie 或账号发给英文站。英文镜像里的文件不能 `push`。
+
+| 命令 | 作用 |
+|---|---|
+| `python wiki.py pull --en 标题…` | 拉取指定页面 |
+| `python wiki.py pull --en --all` | 拉取全部命名空间的页面；`--namespace 编号`（可重复）只拉指定命名空间，`0` 是正文，`10` 是模板，`828` 是模块 |
+| `python wiki.py pull -f wikitext-en/…` | 重新拉取镜像中的文件 |
+| `python wiki.py diff -f wikitext-en/…` | 比较本地文件与英文站当前内容 |
+| `python wiki.py diff --en 标题 --since 修订号` | 显示英文页面从该修订到现在的改动，用来确定译文要同步什么 |
+| `python wiki.py preview -f wikitext-en/…` | 用英文站的模板渲染本地内容；`--html` 保存渲染结果 |
+
+库用法：`wiki.get_page(标题, en=True)`、`wiki.pull(标题, en=True)`、`wiki.pull_en(标题列表)`、`wiki.pull_en(all_pages=True, namespaces=[0])`。其他英文站查询用 `wiki.en_api(action="query", …)`。
+
+标题里有空格时加引号，例如 `python wiki.py pull --en "Void Miner"`。
+
+**记录与增量更新**
+
+- `wikitext-en/.revisions.json` 记录每页的修订号、修订时间、pageid、命名空间、本地路径和内容哈希。再次拉取时先查修订号，只下载有变化或本地缺失的页面。
+- 每次拉取的变更追加到 `wikitext-en/.changes.tsv`（拉取时间、类型、标题、新旧修订号、备注）。事后要知道某次更新了哪些页面，查这个文件。
+- `--all` 会找出记录里有、线上已经不存在的标题，查日志注明改名去向或删除时间。旧文件**保留不删**，读它之前先看记录里有没有 `gone` 字段。指定标题拉取时，只有被指定的标题会这样检查。
+- 本地改过的文件默认不覆盖，会报冲突；确认要用线上内容覆盖时加 `--force`。这一点与中文站的 `pull` 不同，**中文站的 `pull` 会直接覆盖本地文件**。
+- 重定向页保存它自己的源码，不会跟到目标页。只拉当前版本的源码，不下载图片文件和历史版本；`File:` 页面保存的是文件描述。
+
+**目录**：规则与中文镜像相同（`0/`、`模板/`、`模块/`、`分类/`、`文件/`，其他命名空间用英文名）。英文站有一些只差大小写的标题（例如 `Active Transformer` 和 `Active transformer`），Windows 上不能并存，后拉到的文件名带 `~pageid` 后缀。按文件找标题时以 `.revisions.json` 为准，不要从文件名推断。
+
+全站拉取有几千页，请求是顺序发出的。只需要几页时指定标题，不必每次全站拉取。翻译署名与同步日期的要求见[参考英文维基](style.md#参考英文维基)。
 
 ## 标准流程
 

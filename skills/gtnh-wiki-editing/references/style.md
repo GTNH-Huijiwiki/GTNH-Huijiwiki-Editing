@@ -153,7 +153,8 @@ python wiki.py lua "for name,m in pairs(require('Module:Database').queryMaterial
 ### 参考英文维基
 
 - GTNH 官方英文维基：[wiki.gtnewhorizons.com](https://wiki.gtnewhorizons.com/)。翻译或参考英文维基时，同样要按[事实核查](#事实核查)核对数据，英文维基的内容也可能过时。
-- 读取英文维基（只读，不需要 Authkey）：用 `curl` 或 Python 的 `urllib` 请求它的 MediaWiki API `https://wiki.gtnewhorizons.com/w/api.php`：
+- 拉取页面源码、批量对照和查看英文页的改动，用 `wiki.py` 的[英文维基镜像](automation.md#英文维基镜像)：`python wiki.py pull --en 标题`。同步旧译文时，如果 `翻译来源` 的链接带 `oldid`，用 `python wiki.py diff --en 标题 --since 该oldid` 看原文改了什么。
+- 脚本没覆盖的查询（只读，不需要 Authkey），用 `curl` 或 Python 的 `urllib` 请求它的 MediaWiki API `https://wiki.gtnewhorizons.com/w/api.php`：
 
   ```bash
   # 页面源码（wikitext）
