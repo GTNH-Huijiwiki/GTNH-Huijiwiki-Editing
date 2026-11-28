@@ -9,6 +9,7 @@
 - `references/automation.md`：Authkey、账号与权限、工作区、任务日志、标准编辑流程、缓存。
 - `references/wiki-tech.md`：数据库版本、数据集、查询模块、条目模板与数据库的关联。
 - `references/style.md`：事实核查方法、沙盒测试、数据库联动模板、写作风格。
+- `references/enwiki-sync.md`：把英文维基的更新合并进中文页面时必读。
 
 技能中的规定优先于你的通用习惯。如果你的环境已经安装了同名技能，它与本仓库的 `skills/` 是同一份内容，以本仓库中的文件为准。
 

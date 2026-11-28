@@ -234,6 +234,35 @@ class EnglishMirrorTests(unittest.TestCase):
             wiki.en_diff_since("machine", 5)
 
 
+class SentenceChangeTests(unittest.TestCase):
+    OLD = """== One ==
+Alpha machine needs steel plates. Beta machine needs copper wires.
+== Two ==
+* LATEX: coats cables with rubber.
+* LESU: old energy storage. Deprecated as of Version 2.8.0.
+Gamma sentence will disappear completely."""
+    NEW = """== Two ==
+* LATEX: coats cables with rubber.
+* LESU: old energy storage. Deprecated as of Version 2.9.1.
+== Moved ==
+Beta machine needs [[copper|copper wires]].
+Alpha machine needs ''steel'' plates.
+Delta machine is completely brand new here."""
+
+    def test_moves_and_markup_are_ignored(self):
+        added, removed = wiki.sentence_changes(self.OLD, self.NEW)
+        self.assertEqual([a["sentence"] for a in added],
+                         ["Deprecated as of Version 2.9.1.", "Delta machine is completely brand new here."])
+        self.assertEqual([s for _, s in removed], ["Gamma sentence will disappear completely."])
+
+    def test_changed_sentence_reports_words_and_its_line(self):
+        added, removed = wiki.sentence_changes(self.OLD, self.NEW)
+        text = wiki._format_sentence_changes(added, removed)
+        self.assertIn("所在行：* LESU: old energy storage.", text)
+        self.assertIn("“8”→“9”", text)
+        self.assertIsNone(added[1]["old"])
+
+
 class EnglishRequestTests(unittest.TestCase):
     def test_no_chinese_credentials_are_sent(self):
         sent = []

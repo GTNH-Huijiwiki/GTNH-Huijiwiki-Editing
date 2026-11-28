@@ -15,6 +15,7 @@
     python wiki.py pull --en --all [--namespace 编号 ...] [--force]
     python wiki.py pull|preview|diff -f 英文镜像中的文件      # 按路径自动识别为英文站
     python wiki.py diff --en 标题 --since 旧修订号            # 英文页从该修订到现在改了什么
+    python wiki.py diff --en 标题 --since 旧修订号 --sentences  # 只列真正新增、改动和删去的句子
 
 也可以作为库导入：
     import wiki
@@ -661,8 +662,8 @@ def pull_en(titles=None, all_pages=False, namespaces=None, force=False, report=p
     return sync.stats
 
 
-def en_diff_since(title, revid):
-    """英文页面从修订 revid 到现在的差异，用来对照译文需要同步什么。"""
+def _en_revision_pair(title, revid):
+    """返回 (旧修订, 当前页面)；旧修订必须属于同一页面。"""
     result = en_api(action="query", revids=str(revid), prop="revisions",
                     rvprop="ids|timestamp|content", rvslots="main")["query"]
     if not result.get("pages"):
@@ -673,12 +674,100 @@ def en_diff_since(title, revid):
         raise RuntimeError(f"英文站页面不存在：{title}")
     if old["title"] != current["title"]:
         raise RuntimeError(f"修订 {revid} 属于页面 {old['title']}，不是 {current['title']}")
-    revision = old["revisions"][0]
+    return old["revisions"][0], current
+
+
+def en_diff_since(title, revid):
+    """英文页面从修订 revid 到现在的差异，用来对照译文需要同步什么。"""
+    revision, current = _en_revision_pair(title, revid)
     lines = difflib.unified_diff(
         revision["slots"]["main"]["content"].splitlines(), current["text"].splitlines(),
         f"{current['title']} revid={revid} {revision['timestamp']}",
         f"{current['title']} revid={current['revid']} {current['timestamp']}", lineterm="")
     return "\n".join(lines)
+
+
+def _plain_line(line):
+    """去掉文件链接、链接写法和粗斜体，只留读者看到的文字。"""
+    line = re.sub(r"\[\[(?:File|Image):[^\[\]]*(?:\[\[[^\]]*\]\][^\[\]]*)*\]\]", " ", line)
+    line = re.sub(r"\[\[(?:[^\[\]|]*\|)?([^\[\]|]*)\]\]", r"\1", line)
+    line = re.sub(r"\[https?://\S+ ([^\]]*)\]", r"\1", line)
+    return re.sub(r"\s+", " ", re.sub(r"'{2,}", "", line)).strip()
+
+
+def _sentence_key(sentence):
+    return re.sub(r"[\W_]+", "", sentence).lower()
+
+
+def _sentences(text):
+    """依次给出 (章节名, 所在行, 句子)。"""
+    section = "导言"
+    for raw in text.replace("\r\n", "\n").split("\n"):
+        heading = re.match(r"^(={2,6})\s*(.*?)\s*\1\s*$", raw)
+        if heading:
+            section = _plain_line(heading.group(2))
+            continue
+        line = _plain_line(raw)
+        for part in re.split(r"(?<=[.!?])\s+(?=[A-Z\[\'\"*])", line):
+            if len(_sentence_key(part)) >= 8:
+                yield section, line, part
+
+
+def sentence_changes(old, new, near=0.62, small=6):
+    """比较两版英文 wikitext，章节挪动和重排不算改动。
+
+    返回 (新增与改动, 删去)。前者每项为 {section, sentence, line, old, changes}：
+    old 是旧版中相近的句子（全新的句子为 None），changes 在改动很少时列出 (旧词, 新词)。
+    """
+    old_items, new_items = list(_sentences(old)), list(_sentences(new))
+    old_pool = [item[2] for item in old_items]
+    old_all = "".join(_sentence_key(x) for x in old_pool)
+    new_all = "".join(_sentence_key(item[2]) for item in new_items)
+    added = []
+    for section, line, sentence in new_items:
+        if _sentence_key(sentence) in old_all:
+            continue
+        entry = {"section": section, "sentence": sentence, "line": line, "old": None, "changes": None}
+        match = difflib.get_close_matches(sentence, old_pool, n=1, cutoff=near)
+        if match:
+            entry["old"] = match[0]
+            a, b = re.findall(r"\w+|[^\w\s]", match[0]), re.findall(r"\w+|[^\w\s]", sentence)
+            ops = [op for op in difflib.SequenceMatcher(None, a, b, autojunk=False).get_opcodes() if op[0] != "equal"]
+            if sum(max(i2 - i1, j2 - j1) for _, i1, i2, j1, j2 in ops) <= small:
+                entry["changes"] = [(" ".join(a[i1:i2]), " ".join(b[j1:j2])) for _, i1, i2, j1, j2 in ops]
+        added.append(entry)
+    new_pool = [item[2] for item in new_items]
+    removed = [(section, sentence) for section, _, sentence in old_items
+               if _sentence_key(sentence) not in new_all
+               and not difflib.get_close_matches(sentence, new_pool, n=1, cutoff=near)]
+    return added, removed
+
+
+def _format_sentence_changes(added, removed):
+    out, last = [], None
+    for item in added:
+        if item["section"] != last:
+            last = item["section"]
+            out.append(f"\n== {last}")
+        mark = "~" if item["old"] else "+"
+        out.append(f"{mark} {item['sentence']}")
+        # 句子不在行首时带上这一行的开头，否则看不出它说的是哪个列表项或表格行
+        if not item["line"].startswith(item["sentence"]):
+            out.append(f"    所在行：{item['line'][:80]}")
+        if item["changes"] is not None:
+            out.append("    改：" + "；".join(f"“{a}”→“{b}”" for a, b in item["changes"]))
+        elif item["old"]:
+            out.append(f"    旧：{item['old']}")
+    if removed:
+        out.append("\n######## 删去的句子")
+        out += [f"- [{section}] {sentence}" for section, sentence in removed]
+    return "\n".join(out).strip()
+
+
+def en_sentences_since(title, revid):
+    """英文页面从修订 revid 到现在真正新增、改动和删去的句子（可读文本）。"""
+    revision, current = _en_revision_pair(title, revid)
+    return _format_sentence_changes(*sentence_changes(revision["slots"]["main"]["content"], current["text"]))
 
 
 # ── 预览检查 ─────────────────────────────────────────────────
@@ -747,8 +836,11 @@ def _cli_diff(args):
         english = all(is_en_path(f) for f in args.files) and (args.en or not args.titles)
         if not english or len(titles) != 1:
             raise RuntimeError("--since 只用于英文页面，一次一个：diff --en 标题 --since 修订号")
-        print(en_diff_since(titles[0], args.since) or f"{titles[0]}：无差异")
+        compare = en_sentences_since if args.sentences else en_diff_since
+        print(compare(titles[0], args.since) or f"{titles[0]}：无差异")
         return
+    if args.sentences:
+        raise RuntimeError("--sentences 只能与 --since 连用")
     if args.titles or not args.files:
         raise RuntimeError("请用 -f 指定本地文件（只有 --since 可以直接给标题）")
     for path in args.files:
@@ -781,6 +873,7 @@ def _cli():
     p.add_argument("-f", "--files", nargs="+", default=[])
     p.add_argument("--en", action="store_true", help="标题指英文维基页面")
     p.add_argument("--since", type=int, metavar="REVID", help="显示英文页面从该修订到现在的差异")
+    p.add_argument("--sentences", action="store_true", help="与 --since 连用：按句比较，忽略章节挪动和重排")
     p = sub.add_parser("push", help="保存本地文件")
     p.add_argument("-f", "--files", nargs="+", required=True)
     p.add_argument("-s", "--summary", required=True)
