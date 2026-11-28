@@ -46,6 +46,7 @@
 """
 
 import argparse
+from collections import Counter
 import datetime
 import difflib
 import hashlib
@@ -764,10 +765,37 @@ def _format_sentence_changes(added, removed):
     return "\n".join(out).strip()
 
 
+def unlisted_changes(old, new):
+    """按句比较看不到的改动：太短的行（表格单元格、版本号、短参数值）和链接地址。
+
+    返回按出现顺序排列的“+ 内容”“- 内容”。只比较出现次数，整行挪动不算。
+    """
+    def short_lines(text):
+        lines = (line.strip() for line in text.replace("\r\n", "\n").split("\n"))
+        return Counter(line for line in lines
+                       if _sentence_key(line) and len(_sentence_key(_plain_line(line))) < 8)
+
+    def urls(text):
+        return Counter(re.findall(r"https?://[^\s\[\]|<>{}]+", text))
+
+    out = []
+    for count in (short_lines, urls):
+        before, after = count(old), count(new)
+        out += [f"- {item}" for item in before - after]
+        out += [f"+ {item}" for item in after - before]
+    return out
+
+
 def en_sentences_since(title, revid):
     """英文页面从修订 revid 到现在真正新增、改动和删去的句子（可读文本）。"""
     revision, current = _en_revision_pair(title, revid)
-    return _format_sentence_changes(*sentence_changes(revision["slots"]["main"]["content"], current["text"]))
+    old = revision["slots"]["main"]["content"]
+    report = _format_sentence_changes(*sentence_changes(old, current["text"]))
+    others = unlisted_changes(old, current["text"])
+    if others:
+        report += ("\n\n######## 另有短行或链接改动（按句比较看不出位置，用不带 --sentences 的差异核对）\n"
+                   + "\n".join(others))
+    return report.strip()
 
 
 # ── 预览检查 ─────────────────────────────────────────────────
@@ -901,6 +929,10 @@ def _cli():
     elif args.command == "pull":
         _cli_pull(args)
     elif args.command == "preview":
+        # check() 也接受正文字符串；命令行里路径写错时若不拦下，会把路径本身当正文渲染而看似通过
+        missing = [path for path in args.files if not os.path.isfile(path)]
+        if missing:
+            raise RuntimeError(f"找不到本地文件：{'、'.join(missing)}（主命名空间页面在 wikitext/0/ 下）")
         for index, path in enumerate(args.files):
             report = check(path)
             print(f"== {report['title']}  高开销函数 {report.get('expensive', '?')}")

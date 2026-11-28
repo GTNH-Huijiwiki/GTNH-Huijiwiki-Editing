@@ -263,6 +263,37 @@ Delta machine is completely brand new here."""
         self.assertIsNone(added[1]["old"])
 
 
+class UnlistedChangeTests(unittest.TestCase):
+    def test_short_cells_and_link_targets_are_reported(self):
+        old = """|-
+| 2.8.X
+| [https://example.org/main.zip Download]
+| A sentence long enough to compare."""
+        new = """|-
+| 2.9.X
+| [https://example.org/v1.zip Download]
+| A sentence long enough to compare."""
+        self.assertEqual(wiki.unlisted_changes(old, new),
+                         ["- | 2.8.X", "+ | 2.9.X",
+                          "- https://example.org/main.zip", "+ https://example.org/v1.zip"])
+
+    def test_moved_rows_are_not_reported(self):
+        self.assertEqual(wiki.unlisted_changes("""| EV
+|-
+| HV""", """| HV
+|-
+| EV"""), [])
+
+
+class PreviewCommandTests(unittest.TestCase):
+    def test_missing_file_is_rejected_before_rendering(self):
+        argv = ["wiki.py", "preview", "-f", "wikitext/no-such-page.wikitext"]
+        with patch.object(wiki.sys, "argv", argv), patch.object(wiki, "check") as check:
+            with self.assertRaises(RuntimeError):
+                wiki._cli()
+        check.assert_not_called()
+
+
 class EnglishRequestTests(unittest.TestCase):
     def test_no_chinese_credentials_are_sent(self):
         sent = []

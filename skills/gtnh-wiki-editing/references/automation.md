@@ -131,7 +131,7 @@ GTNH-Huijiwiki-Editing/
 | `python wiki.py pull -f wikitext-en/…` | 重新拉取镜像中的文件 |
 | `python wiki.py diff -f wikitext-en/…` | 比较本地文件与英文站当前内容 |
 | `python wiki.py diff --en 标题 --since 修订号` | 显示英文页面从该修订到现在的改动，用来确定译文要同步什么 |
-| `python wiki.py diff --en 标题 --since 修订号 --sentences` | 只列出真正新增、改动和删去的句子，章节挪动和重排不算 |
+| `python wiki.py diff --en 标题 --since 修订号 --sentences` | 只列出真正新增、改动和删去的句子，章节挪动和重排不算；短行与链接地址的改动列在末尾 |
 | `python wiki.py preview -f wikitext-en/…` | 用英文站的模板渲染本地内容；`--html` 保存渲染结果 |
 
 合并英文内容的做法见[同步英文维基](enwiki-sync.md)。
